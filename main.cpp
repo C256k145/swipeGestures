@@ -14,6 +14,9 @@
 #define MOUSEFILE "/dev/input/mice"
 #define EVENTFILE "/dev/input/event7"
 
+//The higher this value is, the faster/longer you have to swipe
+#define SENSITIVITY 30
+
 // std::mutex mtx;
 // std::condition_variable cv;
 bool ready = false;
@@ -22,79 +25,78 @@ bool ready = false;
 int fds[2];
 char buf[3];
 
-void action() {
-  std::cout << "Action performed!" << std::endl;
+int moveDistance_x;
+
+void printer(char data[]) {
+  printf("%d, %d, %d\n", data[0], data[1], data[2]);
 }
 
-void parser() {
-  // buf[0] is the input device number but the numbers its printing dont make sense
-  int moveDistance_x = buf[1];
-  int moveDistance_y = buf[2];
+void action(std::string direction) {
+  char command[] = "xdotool\0";
+  char arg1[] = "key\0";
+  char argLeft[] = "ctrl+super+Right";
+  char argRight[] = "ctrl+super+Left";
 
-  // find a better way to check for the swipe action, this doesnt work very well
-  if(abs(moveDistance_x) > 10)
-    action();
-}
-
-/* 
- * readMouseFile thread gets the data from the mousefile 
- * and prints it out in real-time
- *
- * This can probably do any parsing necessary, and hand off 
- * only the pertinent data to the parseData thread 
- */
-void readMouseFile() {
-  // std::unique_lock<std::mutex> lck(mtx);
-  while (!ready);
-  std::ifstream myFile (MOUSEFILE, std::ios::in | std::ios::binary);
-
-  char data[3];
-  size_t data_size = sizeof(data);
-  while(myFile.read(data, data_size))
-    write(fds[1], data, data_size);
-}
-
-
-/* 
- * readEventFile thread gets the data from the eventfile 
- * 
- *
- * It reads the data from the pipe in the readmousefile 
- * I mightwant to separate the checks into a different function
- */
-void readEventFile() {
-  struct input_event event;
-  while(!ready);
-
-  std::ifstream infile(EVENTFILE);
-  char data[sizeof(event)];
-
-  while(infile.is_open()) {
-    infile.read(data, sizeof(event));
-
-    memcpy(&event, data, sizeof(event));
-    if(event.type == EV_KEY) {
-      if(event.code == BTN_TOOL_TRIPLETAP)
-        read(fds[0], buf, sizeof(buf));
-        action();
+  if(direction == "Right") {
+    char* args[] = {command, arg1, argLeft, nullptr};
+    if(fork() == 0) {
+      execvp(command, args);
+      exit(1);
     }
   }
-  infile.close();
+  else if(direction == "Left") {
+    char* args[] = {command, arg1, argRight, nullptr};
+    if(fork() == 0) {
+      execvp(command, args);
+      exit(1);
+    }
+  }
+}
+
+void readMouseFile() {
+  std::ifstream mouseFile (MOUSEFILE, std::ios::in | std::ios::binary);
+
+  char data[3];
+  std::string right = "Right";
+  std::string left = "Left";
+  size_t data_size = sizeof(data);
+
+  for(int i = 0; i < 10; i++) {
+    mouseFile.read(data, data_size);
+    moveDistance_x += data[1];
+  }
+  if(moveDistance_x > SENSITIVITY) {
+    action(left);
+    moveDistance_x = 0;
+  }
+  else if(moveDistance_x < (SENSITIVITY*-1)) {
+    action(right);
+    moveDistance_x = 0;
+  }
+}
+
+void readEventFile() {
+  struct input_event event;
+  std::ifstream eventFile(EVENTFILE);
+
+  while(eventFile.is_open()) {
+    char eventData[sizeof(event)];
+    eventFile.read(eventData, sizeof(event));
+
+    memcpy(&event, eventData, sizeof(event));
+    if(event.type == EV_KEY) {
+      if(event.code == BTN_TOOL_TRIPLETAP) {
+        readMouseFile();
+        struct input_event event;
+      }
+    }
+  }
+  eventFile.close();
 }
 
 
 
 int main(int argc, char** argv) {
-	if(pipe(fds) == -1)
-        fprintf(stderr, "Error creating pipe\n");
-  else {
-  	std::thread mouse_data_reader (readMouseFile);
-  	std::thread event_data_reader (readEventFile);
-    ready = true;
-
-  	mouse_data_reader.join();
-  	event_data_reader.join();
-  }
+  readEventFile();
 	return 0;
-
 }
