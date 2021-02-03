@@ -8,6 +8,7 @@
 #include <X11/Xos.h>
 #include <iostream>
 #include <memory>
+#include <string.h>
 
 class XRequestManager {
 private:
@@ -25,6 +26,7 @@ public:
 	XWindowAttributes getAttrs();
 
 	int switch_desktop(int target);
+	int get_current_desktop();
 
 };
 
