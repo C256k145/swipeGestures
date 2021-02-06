@@ -8,12 +8,12 @@
 #include "XRequestManager.h"
 
 #define MOUSEFILE "/dev/input/mice"
-#define EVENTFILE "/dev/input/event7"
+#define EVENTFILE "/dev/input/event4"
 
 #define OUTFILE "/home/archie/Dev/C/swipe_gestures/swipe_input"
 
 //The higher this value is, the faster/longer you have to swipe
-#define SENSITIVITY 10
+#define SENSITIVITY 30
 
 bool tripleTap = false;
 
@@ -75,7 +75,7 @@ int prevDesktop(std::unique_ptr<XRequestManager> &xrm) {
   return 0;
 }
 
-void readMouseFile(XRequestManager *XRM) {
+void readMouseFile(std::unique_ptr<XRequestManager> xrm) {
   std::ifstream mouseFile (MOUSEFILE, std::ios::in | std::ios::binary);
 
   char mouseData[3];
@@ -86,12 +86,11 @@ void readMouseFile(XRequestManager *XRM) {
     if(tripleTap) {
       mouseFile.read(mouseData, mouse_data_size);
       moveDistance_x = mouseData[1];
-      // write_output(moveDistance_x);
       // std::cout << moveDistance_x << std::endl;
       if(moveDistance_x > SENSITIVITY)
-        XRM->getAttrs();
+        prevDesktop(xrm);
       else if(moveDistance_x < -SENSITIVITY)
-        XRM->getAttrs();
+        nextDesktop(xrm);
     }
   }
   mouseFile.close();
@@ -114,19 +113,6 @@ void readEventFile() {
 }
 
 
-// int main(int argc, char** argv) {
-//   XRequestManager *XRM = new XRequestManager();
-//   int numWS = XRM->getNumWorkspaces();
-//   std::cout << numWS << std::endl;
-//   // int curWS = XRM->getCurrentWorkspace();
-//   std::thread eventReader (readEventFile);
-//   std::thread mouseReader (readMouseFile, XRM);
-
-//   eventReader.join();
-//   mouseReader.join();
-//   return 0;
-// }
-
 int main(int argc, char** argv) {
   std::unique_ptr<XRequestManager> xrm(XRequestManager::Create());
   if (!xrm) {
@@ -134,8 +120,10 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  // std::cout << xrm->get_property("_NET_CURRENT_DESKTOP") << std::endl;
-  // xrm->get_current_desktop();
-  prevDesktop(xrm);
+  std::thread eventReader (readEventFile);
+  std::thread mouseReader (readMouseFile, move(xrm));
+
+  eventReader.join();
+  mouseReader.join();
   return 0;
 }

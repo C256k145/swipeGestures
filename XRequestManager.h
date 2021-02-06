@@ -12,8 +12,6 @@
 
 class XRequestManager {
 private:
-	int currentWorkspace;
-	int numWorkspaces;
 	Display *disp;
 	const Window root;
 

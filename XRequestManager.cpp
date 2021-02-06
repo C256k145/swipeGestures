@@ -49,7 +49,6 @@ Probably more too, but thats what im gonna use.
 */
 int XRequestManager::get_property(const char* prop_name) {
 	Window win = DefaultRootWindow(disp);
-	// const char* prop_name = "_NET_NUMBER_OF_DESKTOPS";
 	Atom xa_prop_name = XInternAtom(disp, prop_name, False);
 	Atom xa_ret_type;
 	int ret_format;
