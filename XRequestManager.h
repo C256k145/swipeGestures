@@ -26,7 +26,7 @@ public:
 	XWindowAttributes getAttrs();
 
 	int switch_desktop(int target);
-	int get_current_desktop();
+	int get_property(const char* prop_name);
 
 };
 

@@ -51,6 +51,30 @@ int write_output(int info) {
   return 0;
 }
 
+int nextDesktop(std::unique_ptr<XRequestManager> &xrm) {
+  int current_desktop = xrm->get_property("_NET_CURRENT_DESKTOP");
+  int num_desktops = xrm->get_property("_NET_NUMBER_OF_DESKTOPS");
+
+  if(current_desktop == num_desktops - 1)
+    xrm->switch_desktop(0);
+  else
+    xrm->switch_desktop(current_desktop + 1);
+
+  return 0;
+}
+
+int prevDesktop(std::unique_ptr<XRequestManager> &xrm) {
+  int current_desktop = xrm->get_property("_NET_CURRENT_DESKTOP");
+  int num_desktops = xrm->get_property("_NET_NUMBER_OF_DESKTOPS");
+
+  if(current_desktop == 0)
+    xrm->switch_desktop(num_desktops - 1);
+  else
+    xrm->switch_desktop(current_desktop - 1);
+
+  return 0;
+}
+
 void readMouseFile(XRequestManager *XRM) {
   std::ifstream mouseFile (MOUSEFILE, std::ios::in | std::ios::binary);
 
@@ -110,12 +134,8 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  // int val;
-  // std::cin >> val;
-  // if(xrm->switch_desktop(val) != 0)
-  //   std::cout << "fuck\n";
-
-  std::cout << xrm->get_current_desktop() << std::endl;
+  // std::cout << xrm->get_property("_NET_CURRENT_DESKTOP") << std::endl;
   // xrm->get_current_desktop();
+  prevDesktop(xrm);
   return 0;
 }

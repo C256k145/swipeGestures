@@ -43,9 +43,13 @@ int XRequestManager::switch_desktop(int target) {
 		return 1;
 }
 
-int XRequestManager::get_current_desktop() {
+/*
+Options for prop_name are _NET_NUMBER_OF_DESKTOPS and _NET_CURRENT_DESKTOP. 
+Probably more too, but thats what im gonna use.
+*/
+int XRequestManager::get_property(const char* prop_name) {
 	Window win = DefaultRootWindow(disp);
-	const char* prop_name = "_NET_CURRENT_DESKTOP";
+	// const char* prop_name = "_NET_NUMBER_OF_DESKTOPS";
 	Atom xa_prop_name = XInternAtom(disp, prop_name, False);
 	Atom xa_ret_type;
 	int ret_format;
