@@ -13,19 +13,12 @@
 #define OUTFILE "/home/archie/Dev/C/swipe_gestures/swipe_input"
 
 //The higher this value is, the faster/longer you have to swipe
-#define SENSITIVITY 30
+#define SENSITIVITY 20
 
 bool tripleTap = false;
 
 int fds[2];
 char buf[3];
-
-// void switch_desktop(int input, Display *disp) {
-//   unsigned long *cur_desktop = NULL;
-//   Window root = DefaultRootWindow(disp);
-//   cur_desktop = (unsigned long *)get_property(disp, root,
-//             XA_CARDINAL, "_NET_CURRENT_DESKTOP", NULL);
-// }
 
 void printer(char data[]) {
   printf("%d, %d, %d\n", data[0], data[1], data[2]);
@@ -80,17 +73,21 @@ void readMouseFile(std::unique_ptr<XRequestManager> xrm) {
 
   char mouseData[3];
   size_t mouse_data_size = sizeof(mouseData);
-  int moveDistance_x = 0;
 
+  // while(busywait == bad)
+  //   fuckoff()
   while(mouseFile.is_open()) {
     if(tripleTap) {
+      int moveDistance_x = 0;
       mouseFile.read(mouseData, mouse_data_size);
       moveDistance_x = mouseData[1];
-      // std::cout << moveDistance_x << std::endl;
-      if(moveDistance_x > SENSITIVITY)
-        prevDesktop(xrm);
-      else if(moveDistance_x < -SENSITIVITY)
-        nextDesktop(xrm);
+
+      // if(avg > SENSITIVITY || avg < -SENSITIVITY)
+        std::cout << moveDistance_x << std::endl;
+      // if(avg > SENSITIVITY)
+      //   prevDesktop(xrm);
+      // else if(avg < -SENSITIVITY)
+      //   nextDesktop(xrm);
     }
   }
   mouseFile.close();
